@@ -68,13 +68,14 @@ public class MyDispatchServlet extends HttpServlet {
                 Class<?> cz = Class.forName(clazz);
                 if(cz.isAnnotationPresent(XpController.class)) {
                     Object obj = cz.getDeclaredConstructor().newInstance();
-                    String key = cz.getName();
-                    beans.put(key, obj);
+                    XpController controller = cz.getDeclaredAnnotation(XpController.class);
+                    String key = controller.value();
+                    beans.put(key, obj);//把controller类新建一个对象和类名一起放在beans中
                 } else if(cz.isAnnotationPresent(XpService.class)) {
                     Object obj = cz.getDeclaredConstructor().newInstance();
                     XpService anno = cz.getDeclaredAnnotation(XpService.class);
                     String key = anno.value();
-                    beans.put(key, obj);
+                    beans.put(key, obj);//新建一个service对象和value值放在beans中
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -97,10 +98,10 @@ public class MyDispatchServlet extends HttpServlet {
                 for(Field field : fields) {
                     if(field.isAnnotationPresent(XpAtuowired.class)) {
                         XpAtuowired auto = field.getDeclaredAnnotation(XpAtuowired.class);
-                        Object value = beans.get(auto.value());
+                        Object value = beans.get(auto.value());//拿到beans中实例化的service类
                         field.setAccessible(true);
                         try {
-                            field.set(obj, value);
+                            field.set(obj, value);//将实例化的service类注入到controller类中的service字段中
                         } catch (IllegalAccessException e) {
                             e.printStackTrace();
                         }
@@ -120,15 +121,15 @@ public class MyDispatchServlet extends HttpServlet {
                 String url = "";
                 if(clazz.isAnnotationPresent(XpRequestMapping.class)) {
                     XpRequestMapping declaredAnnotation = clazz.getDeclaredAnnotation(XpRequestMapping.class);
-                    url = declaredAnnotation.value();
+                    url = declaredAnnotation.value();//拿到类上的url/xp
                 }
                 Method[] methods = clazz.getDeclaredMethods();
                 for(Method m : methods) {
                     if(m.isAnnotationPresent(XpRequestMapping.class)) {
                         XpRequestMapping da = m.getDeclaredAnnotation(XpRequestMapping.class);
-                        url = url + da.value();
-                        urlMappings.put(url, m);
-                        urlControllers.put(url, obj);
+                        url = url + da.value();//类上的url组合上方法上的url /xp/test
+                        urlMappings.put(url, m);//建立方法与url的map
+                        urlControllers.put(url, obj);//建立类实例与url的map
                     }
                 }
             }
@@ -141,8 +142,8 @@ public class MyDispatchServlet extends HttpServlet {
         String requestURI = req.getRequestURI();
         String url = requestURI.replace(contextPath, "");
 
-        Method method = (Method) urlMappings.get(url);
-        Object obj = urlControllers.get(url);
+        Method method = (Method) urlMappings.get(url);//拿到方法
+        Object obj = urlControllers.get(url);//拿到类
         if(Objects.nonNull(obj)) {
             Object[] args = this.hand(req, resp, method);
             try {
@@ -171,19 +172,19 @@ public class MyDispatchServlet extends HttpServlet {
                 args[args_i++] = req;
             }
             if(ServletResponse.class.isAssignableFrom(paramClazz)) {
-                args[args_i++] = resp;
+                args[args_i++] = resp;//拿到response放入args数组中
             }
             Annotation[] paramAnnos = method.getParameterAnnotations()[index];
             if(paramAnnos.length > 0) {
                 for(Annotation param : paramAnnos) {
                     if(XpRequestParam.class.isAssignableFrom(param.getClass())) {
                         XpRequestParam p = (XpRequestParam)param;
-                        args[args_i++] = req.getParameter(p.value());
+                        args[args_i++] = req.getParameter(p.value());//拿到参数name和age依次放入args数组中
                     }
                 }
             }
             index++;
         }
-        return args;
+        return args;//得到参数数组
     }
 }
