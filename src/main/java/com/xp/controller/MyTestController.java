@@ -27,6 +27,7 @@ public class MyTestController {
     public void test(@XpRequestParam("name") String name, HttpServletResponse response, @XpRequestParam("age") String age) {
         String str = myService.query(name, age);
         System.out.println(str);
+        System.out.println();
 
         try {
             PrintWriter out = response.getWriter();
